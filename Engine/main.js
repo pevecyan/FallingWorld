@@ -1,5 +1,6 @@
 var Player;
 
+
 $(document).ready(function(){
 
 	var canvasElement = $("#canvas")[0];
@@ -23,7 +24,7 @@ $(document).ready(function(){
 	};
 	
 
-
+	$(document).bind("keydown", "left", function() { Player.x++; });
 
 
 
@@ -34,12 +35,19 @@ $(document).ready(function(){
 		draw();
 	}, 1000/FPS);
 
+	function draw(){
+		canvas.fillStyle = "white";
+		canvas.fillRect(0, 0, WIDTH, HEIGHT);
+		canvas.strokeStyle = "black";
+		canvas.strokeRect(0, 0, WIDTH, HEIGHT);
+
+		Player.draw();
+	
+	}
+
 })
 
 function update(){
 
 }
 
-function draw(){
-	Player.draw();
-}
