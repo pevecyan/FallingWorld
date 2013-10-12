@@ -17,6 +17,7 @@ $(document).ready(function(){
 		fallingSpeed: 0.0,
 		xDirection: 0,
 		canJump: true,
+		onBlock: false,
 
 		draw: function(){
 			canvas.fillStyle = this.color;
@@ -25,7 +26,7 @@ $(document).ready(function(){
 
 		update: function(){
 			//moving
-			this.x += this.xDirection * 5;
+			this.x += this.xDirection * 6;
 
 			//left block collision
 			
@@ -53,8 +54,27 @@ $(document).ready(function(){
 
 			//gravity
 			this.fallingSpeed += 2.5;
+			if(this.fallingSpeed > 25){this.fallingSpeed =25;}
 			this.y += this.fallingSpeed;
+			
+			if(!this.canJump || this.onBlock){
+				
+				var bottomColllisionBlock = {x: this.x, y: this.y + this.height, width: this.width, height: 1}
+				
+				for(var i = 0; i < Blocks.length; i++){
+					if(collides(bottomColllisionBlock,Blocks[i])){
+						this.y = Blocks[i].y - this.height;
+						this.fallingSpeed = 0;
+						this.canJump = true;
+						this.onBlock = true;
+						break;
+					}
+				}
+				
+			}
+			
 			if(!(this.y < HEIGHT-this.height)){this.y = HEIGHT-this.height; fallingSpeed = 0; this.canJump = true;}
+
 		},
 
 		jump: function(){
@@ -149,7 +169,7 @@ $(document).ready(function(){
 				break;
 		}
 
-
+		Block.falling = true;
 
 		Block.x = Math.round(Math.random()*(WIDTH/Block.width -1))*Block.width;
 		Block.y = -32;
@@ -158,9 +178,22 @@ $(document).ready(function(){
 
 
 		Block.update = function(){
-			Block.fallingSpeed += 3;
-			Block.y += Block.fallingSpeed;
-			if(Block.y > HEIGHT-Block.width) {Block.y = HEIGHT-Block.width; Block.fallingSpeed = 0;}
+			if(Block.falling){
+				Block.fallingSpeed += 3;
+				if(Block.fallingSpeed > 30){Block.fallingSpeed = 30;}
+				Block.y += Block.fallingSpeed;
+
+				for(var i = 0; i < Blocks.length; i++){
+					if(Block != Blocks[i] && collides(this,Blocks[i])){
+						Block.y = Blocks[i].y-Block.height;
+						Block.falling = false;
+						break;
+					}
+				}
+
+				if(Block.y > HEIGHT-Block.width) {Block.y = HEIGHT-Block.width; Block.fallingSpeed = 0;Block.falling = false;}
+				
+			}
 		};
 
 		Block.draw = function(){
