@@ -1,5 +1,3 @@
-var Player;
-
 
 $(document).ready(function(){
 
@@ -10,21 +8,47 @@ $(document).ready(function(){
 	var WIDTH = $("#canvas").width();
 
 	//Player
-	Player = {
+	var Player = {
 		color: "black",
 		x: 50,
 		y: 50,
 		width: 32,
 		height: 32,
+		fallingSpeed: 0.0,
+		xDirection: 0,
+		canJump: true,
 
 		draw: function(){
 			canvas.fillStyle = this.color;
 	    	canvas.fillRect(this.x, this.y, this.width, this.height);
+		},
+
+		update: function(){
+			this.x += this.xDirection * 5;
+
+
+			//gravity
+			this.fallingSpeed += 2.5;
+			this.y += this.fallingSpeed;
+			if(!(this.y < HEIGHT-this.height)){this.y = HEIGHT-this.height; fallingSpeed = 0; this.canJump = true}
+		},
+
+		jump: function(){
+			if(this.canJump){
+				this.fallingSpeed = -20;
+				this.canJump = false;
+			}
+
 		}
 	};
 	
+	//Keyinputs
+	$(document).bind("keydown", "left", function() { Player.xDirection = -1; });
+	$(document).bind("keyup", "left", function() { Player.xDirection = 0; });
+	$(document).bind("keydown", "right", function() { Player.xDirection = +1; });
+	$(document).bind("keyup", "right", function() { Player.xDirection = 0; });
 
-	$(document).bind("keydown", "left", function() { Player.x++; });
+	$(document).bind("keydown", "up", function() { Player.jump(); });
 
 
 
@@ -35,6 +59,14 @@ $(document).ready(function(){
 		draw();
 	}, 1000/FPS);
 
+
+
+	//update function - game logic
+	function update(){
+		Player.update();
+	}
+
+	//draw function - drawing objects
 	function draw(){
 		canvas.fillStyle = "white";
 		canvas.fillRect(0, 0, WIDTH, HEIGHT);
@@ -47,7 +79,4 @@ $(document).ready(function(){
 
 })
 
-function update(){
-
-}
 
