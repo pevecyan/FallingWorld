@@ -26,6 +26,28 @@ $(document).ready(function(){
 		update: function(){
 			//moving
 			this.x += this.xDirection * 5;
+
+			//left block collision
+			
+			if(this.xDirection == -1){
+				var leftCollisionBlock = {x: this.x -1, y: this.y, width: 1, height: this.height}		
+				for(var i = 0; i < Blocks.length; i++){
+					if(collides(leftCollisionBlock, Blocks[i])){
+						this.x = Blocks[i].x+Blocks[i].width;
+						break;
+					}
+				}
+			}
+			else if(this.xDirection == +1){
+				var rightCollisionBlock = {x: this.x +this.width, y: this.y, width: 1, height: this.height}		
+				for(var i = 0; i < Blocks.length; i++){
+					if(collides(rightCollisionBlock, Blocks[i])){
+						this.x = Blocks[i].x-this.width;
+						break;
+					}
+				}
+			}
+
 			if(this.x < 0)this.x = 0;
 			if(this.x > WIDTH-this.width)this.x = WIDTH-this.width;
 
@@ -64,7 +86,7 @@ $(document).ready(function(){
 	
 
 	//SETUP ENGINE
-	var FPS = 30;
+	var FPS = 35;
 	setInterval(function(){
 		update();
 		draw();
@@ -79,6 +101,7 @@ $(document).ready(function(){
 		Blocks.forEach(function(bullet) {
 	    	bullet.update();
 	  	});
+
 	}
 
 	//draw function - drawing objects
@@ -96,14 +119,21 @@ $(document).ready(function(){
 	  	});
 	}
 
+	function collides(a, b) {
+	  return a.x < b.x + b.width &&
+	         a.x + a.width > b.x &&
+	         a.y < b.y + b.height &&
+	         a.y + a.height > b.y;
+	}
+
 	//Game objects creation
 	function createBlock(Block){
 
 		//Block.width = 32;
 		//Block.height = 32;
 
-		var colorNumber = Math.round(Math.random()*3);
-		switch(colorNumber){
+		Block.colorNumber = Math.round(Math.random()*3);
+		switch(Block.colorNumber){
 			case 0:
 				Block.color = "blue";
 				break;
@@ -112,6 +142,10 @@ $(document).ready(function(){
 				break;
 			case 2:
 				Block.color = "green";
+				break;
+
+			case 3:
+				Block.color = "orange";
 				break;
 		}
 
