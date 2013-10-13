@@ -7,6 +7,15 @@ $(document).ready(function(){
 	var HEIGHT = $("#canvas").height();
 	var WIDTH = $("#canvas").width();
 
+	//date
+
+	
+	var previousTime = new Date().getTime();
+	var currentTime = 0;
+	var elapsedTime = 0;
+
+	var fatalBlock;
+
 	//Player
 	var Player = {
 		color: "black",
@@ -54,7 +63,7 @@ $(document).ready(function(){
 
 			//gravity
 			this.fallingSpeed += 2.5;
-			if(this.fallingSpeed > 25){this.fallingSpeed =25;}
+			if(this.fallingSpeed > 30){this.fallingSpeed =30;}
 			this.y += this.fallingSpeed;
 			
 			if(!this.canJump || this.onBlock){
@@ -87,6 +96,7 @@ $(document).ready(function(){
 	};
 
 	var Blocks = [];
+	var Particles = [];
 	var canCreate = true;
 
 
@@ -102,6 +112,7 @@ $(document).ready(function(){
 
 	$(document).bind("keyup", "f", function(){canCreate = true;})
 	$(document).bind("keydown", "f", function(){if(canCreate){Blocks.push(createBlock({width:32, height:32})); canCreate = false;}})
+	$(document).bind("keydown", "e", function(){Particles.push(createParticle({xDir:-7, yDir:-4, width:4,height:4}));})
 
 	
 
@@ -121,6 +132,17 @@ $(document).ready(function(){
 		Blocks.forEach(function(bullet) {
 	    	bullet.update();
 	  	});
+	  	Particles.forEach(function(particle) {
+	    	particle.update();
+	  	});
+
+		currentTime = new Date().getTime();
+		elapsedTime += currentTime-previousTime;
+		previousTime = currentTime;
+
+		if(elapsedTime > 1000){Blocks.push(createBlock({width:32, height:32})); elapsedTime = 0;}
+
+
 
 	}
 
@@ -133,10 +155,13 @@ $(document).ready(function(){
 		
 		
 		Player.draw();
-
+		Particles.forEach(function(particle) {
+	    	particle.draw();
+	  	});
 		Blocks.forEach(function(bullet) {
 	    	bullet.draw();
 	  	});
+	  	
 	}
 
 	function collides(a, b) {
@@ -158,7 +183,7 @@ $(document).ready(function(){
 				Block.color = "blue";
 				break;
 			case 1:
-				Block.color = "red";
+				Block.color = "pink";
 				break;
 			case 2:
 				Block.color = "green";
@@ -171,7 +196,8 @@ $(document).ready(function(){
 
 		Block.falling = true;
 
-		Block.x = Math.round(Math.random()*(WIDTH/Block.width -1))*Block.width;
+		//Block.x = Math.round(Math.random()*(WIDTH/Block.width -1))*Block.width;
+		Block.x = Math.round(Player.x/32)*32;
 		Block.y = -32;
 
 		Block.fallingSpeed = 0;
@@ -192,6 +218,20 @@ $(document).ready(function(){
 				}
 
 				if(Block.y > HEIGHT-Block.width) {Block.y = HEIGHT-Block.width; Block.fallingSpeed = 0;Block.falling = false;}
+				/*var topPlayerCollision = {x:Player.x, y:Player.y-16, height: 16, width: Player.width}
+				if(collides(topPlayerCollision,Block)){
+					Player.fallingSpeed = Block.fallingSpeed
+				}*/
+				if(collides(Player,Block)){
+					fatalBlock = Blocks.indexOf(Block);
+					for(var i = 0; i < 100; i++){
+						var xDirt = Math.round(Math.random()*50)-25;
+						var yDirt = Math.round(Math.random()*10)-15;
+						var h = Math.round(Math.random()*4)+2
+						var w = Math.round(Math.random()*4)+2
+						Particles.push(createParticle({xDir: xDirt, yDir: yDirt, width:w, height: h}))
+					}
+				}
 				
 			}
 		};
@@ -204,6 +244,43 @@ $(document).ready(function(){
 		};
 
 		return Block;
+	}
+
+	function createParticle(Particle){
+		//xDir,yDir,height,width come from object creation
+
+		Particle.x = Player.x + Player.width/2;
+		Particle.y = Player.y + Player.height/2,
+
+		Particle.fallingSpeed = 0;
+
+		Particle.isMoving = true;
+
+		Particle.update =  function(){
+			if(Particle.isMoving){
+				Particle.fallingSpeed += 1;
+				
+				Particle.x+= Particle.xDir;
+				Particle.y+= Particle.yDir + Particle.fallingSpeed;
+			
+
+				for(var i = 0; i < Blocks.length; i++){
+					if(i != fatalBlock && collides(Particle,Blocks[i])){
+						Particle.isMoving = false;
+						
+					}
+				}
+
+				if(Particle.y > HEIGHT-Particle.height){Particle.y = HEIGHT-Particle.height; Particle.isMoving = false;}
+			}
+		};
+
+		Particle.draw = function(){
+			canvas.fillStyle = "red";
+			canvas.fillRect(Particle.x,Particle.y,Particle.width,Particle.height);
+		}
+
+		return Particle;
 	}
 
 })
