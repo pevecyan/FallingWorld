@@ -13,6 +13,7 @@ $(document).ready(function(){
 	var previousTime = new Date().getTime();
 	var currentTime = 0;
 	var elapsedTime = 0;
+	var oldTime = 0;
 
 	var fatalBlock;
 
@@ -136,11 +137,18 @@ $(document).ready(function(){
 	    	particle.update();
 	  	});
 
+	  	if(Particles.length > 200){
+	  		Particles.shift();
+	  	}
+
+
 		currentTime = new Date().getTime();
 		elapsedTime += currentTime-previousTime;
 		previousTime = currentTime;
 
 		if(elapsedTime > 1000){Blocks.push(createBlock({width:32, height:32})); elapsedTime = 0;}
+
+		
 
 
 
@@ -155,12 +163,19 @@ $(document).ready(function(){
 		
 		
 		Player.draw();
-		Particles.forEach(function(particle) {
-	    	particle.draw();
-	  	});
+
 		Blocks.forEach(function(bullet) {
 	    	bullet.draw();
 	  	});
+	  	Particles.forEach(function(particle) {
+	    	particle.draw();
+	  	});
+
+	  	
+
+	  	canvas.font="30px Arial";
+		canvas.fillText(previousTime-oldTime,10,50);
+		oldTime = previousTime;
 	  	
 	}
 
@@ -183,7 +198,7 @@ $(document).ready(function(){
 				Block.color = "blue";
 				break;
 			case 1:
-				Block.color = "pink";
+				Block.color = "darkgray";
 				break;
 			case 2:
 				Block.color = "green";
@@ -217,20 +232,47 @@ $(document).ready(function(){
 					}
 				}
 
+
 				if(Block.y > HEIGHT-Block.width) {Block.y = HEIGHT-Block.width; Block.fallingSpeed = 0;Block.falling = false;}
 				/*var topPlayerCollision = {x:Player.x, y:Player.y-16, height: 16, width: Player.width}
 				if(collides(topPlayerCollision,Block)){
 					Player.fallingSpeed = Block.fallingSpeed
 				}*/
-				if(collides(Player,Block)){
+				var leftPlayerBlock = {x: Player.x, y: Player.y, width: Player.width/4, height: Player.height};
+				var rightPlayerBlock = {x: Player.x+Player.width*3/4, y: Player.y, width: Player.width/4, height: Player.height};
+				var centerPlayerBlock = {x: Player.x+Player.width/2-Player.width/4, y: Player.y, width: Player.width/2, height: Player.height};
+
+				if(collides(centerPlayerBlock,Block)){
 					fatalBlock = Blocks.indexOf(Block);
 					for(var i = 0; i < 100; i++){
 						var xDirt = Math.round(Math.random()*50)-25;
-						var yDirt = Math.round(Math.random()*10)-15;
+						var yDirt = Math.round(Math.random()*5)-10;
+						var h = Math.round(Math.random()*5)+2
+						var w = Math.round(Math.random()*5)+2
+						Particles.push(createParticle({xDir: xDirt, yDir: yDirt, width:w, height: h}))
+					}
+				}
+				else if(collides(leftPlayerBlock,Block)){
+					fatalBlock = Blocks.indexOf(Block);
+					for(var i = 0; i < 50; i++){
+						var xDirt = Math.round(Math.random()*25)+1;
+						var yDirt = Math.round(Math.random()*5)-10;
 						var h = Math.round(Math.random()*4)+2
 						var w = Math.round(Math.random()*4)+2
 						Particles.push(createParticle({xDir: xDirt, yDir: yDirt, width:w, height: h}))
 					}
+					Player.x = Block.x+Block.width;
+				}
+				else if(collides(rightPlayerBlock,Block)){
+					fatalBlock = Blocks.indexOf(Block);
+					for(var i = 0; i < 50; i++){
+						var xDirt = Math.round(Math.random()*25)-26;
+						var yDirt = Math.round(Math.random()*5)-10;
+						var h = Math.round(Math.random()*4)+2
+						var w = Math.round(Math.random()*4)+2
+						Particles.push(createParticle({xDir: xDirt, yDir: yDirt, width:w, height: h}))
+					}
+					Player.x = Block.x-Player.width;
 				}
 				
 			}
@@ -254,7 +296,8 @@ $(document).ready(function(){
 
 		Particle.fallingSpeed = 0;
 
-		Particle.isMoving = true;
+		Particle.isMoving = true,
+		Particle.draw = true;
 
 		Particle.update =  function(){
 			if(Particle.isMoving){
@@ -276,8 +319,10 @@ $(document).ready(function(){
 		};
 
 		Particle.draw = function(){
-			canvas.fillStyle = "red";
-			canvas.fillRect(Particle.x,Particle.y,Particle.width,Particle.height);
+			if(Particle.draw){
+				canvas.fillStyle = "red";
+				canvas.fillRect(Particle.x,Particle.y,Particle.width,Particle.height);
+			}
 		}
 
 		return Particle;
