@@ -1,0 +1,14 @@
+body{
+	background-color:#00233D;
+	margin: 0;
+    overflow:hidden;
+    width:100%;
+}
+html{
+	overflow:hidden;
+}
+.gameContainer{
+	height: 500px;
+	background-image:url(../Images/css/Background.png);
+	background-repeat: repeat-x;
+}

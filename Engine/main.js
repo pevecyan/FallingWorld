@@ -14,12 +14,20 @@ $(document).ready(function(){
 
 	gameState = 0;
 
+	var gameOver = false;
+
+	var startSetup;
+
 	//main canvas setup
 	var canvasElement = $("#canvas")[0];
 	var canvas = canvasElement.getContext("2d");
 
 	var HEIGHT = $("#canvas").height();
 	var WIDTH = $("#canvas").width();
+
+
+	var BackgroundSprite = Sprite("Background");
+	var BackgroundGameSprite = Sprite("BackgroundGame");
 
 	//time manipulation
 	var previousTime = new Date().getTime();
@@ -51,143 +59,30 @@ $(document).ready(function(){
 	//gamestate: 2-game
 	//timed events;	
 	var elapsedTimeForBlock = 0;
+
+	var elapsedTimeForBlockGroup = 0;
+
 	var oldTime = 0;
 
 	var fatalBlock;
 
 	var rowsRemoved;
 
+	var gameOverSprite = Sprite("GameOver");
+
 
 	var PlayerSprite = Sprite("Player");
+	var PlayerLeftSprite = Sprite("PlayerLeft");
+	var PlayerRightSprite = Sprite("PlayerRight");
+	var PlayerJumpUpSprite = Sprite("PlayerJumpUp");
+	var PlayerJumpDownSprite = Sprite("PlayerJumpDown");
+
+	var fallingBlockX = -1;
+	var fallingBlockTrailSprite = Sprite("Trail");
 
 	//Player
-	var Player = {
-		sprite: PlayerSprite,
-		color: "black",
-		x: WIDTH/2-16,
-		y: 0,
-		width: 32,
-		height: 32,
-		fallingSpeed: 0.0,
-		xDirection: 0,
-		canJump: false,
-		onBlock: false,
+	var Player = createPlayer(PlayerSprite,PlayerLeftSprite,PlayerRightSprite,PlayerJumpUpSprite,PlayerJumpDownSprite, WIDTH, HEIGHT, canvas);
 
-		draw: function(){
-			//canvas.fillStyle = this.color;
-	    	//canvas.fillRect(this.x, this.y, this.width, this.height);
-	    	this.sprite.draw(canvas, this.x, this.y);
-		},
-
-		update: function(){
-			//moving
-			this.x += this.xDirection;
-			if(this.xDirection < 0 && this.canJump){
-				for(var i = 0; i < Math.abs(this.xDirection)/4; i++){
-						var xDirt = Math.round(Math.random()*5);
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*5)+2
-						var w = Math.round(Math.random()*5)+2
-						ParticlesFloor.push(createParticleFloor({xDir: xDirt, yDir: yDirt, width:w, height: h, fall: false}))
-					}
-			}
-			if(this.xDirection > 0 && this.canJump){
-				for(var i = 0; i < Math.abs(this.xDirection)/4; i++){
-						var xDirt = Math.round(Math.random()*5)*-1;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*5)+2
-						var w = Math.round(Math.random()*5)+2
-						ParticlesFloor.push(createParticleFloor({xDir: xDirt, yDir: yDirt, width:w, height: h, fall: false}))
-					}
-			}
-
-			//left block collision
-			
-			if(this.xDirection < 0){
-				var leftCollisionBlock = {x: this.x -1, y: this.y, width: 1, height: this.height}		
-				for(var i = 0; i < Blocks.length; i++){
-					if(collides(leftCollisionBlock, Blocks[i])){
-						this.x = Blocks[i].x+Blocks[i].width;
-						break;
-					}
-				}
-			}
-			else if(this.xDirection > 0){
-				var rightCollisionBlock = {x: this.x +this.width, y: this.y, width: 1, height: this.height}		
-				for(var i = 0; i < Blocks.length; i++){
-					if(collides(rightCollisionBlock, Blocks[i])){
-						this.x = Blocks[i].x-this.width;
-						break;
-					}
-				}
-			}
-
-			if(this.x < 0){this.x = 0;this.xDirection = 0;}
-			if(this.x > WIDTH-this.width){this.x = WIDTH-this.width;this.xDirection = 0;}
-
-			//gravity
-			this.fallingSpeed += 2.5;
-			if(this.fallingSpeed > 30){this.fallingSpeed =30;}
-			this.y += this.fallingSpeed;
-			
-			if(!this.canJump || this.onBlock){
-				
-				var bottomColllisionBlock = {x: this.x, y: this.y + this.height, width: this.width, height: 1}
-				
-				for(var i = 0; i < Blocks.length; i++){
-					if(collides(bottomColllisionBlock,Blocks[i])){
-						this.y = Blocks[i].y - this.height;
-						this.fallingSpeed = 0;
-
-						if(!this.canJump){
-							for(var i = 0; i < 20; i++){
-								var xDirt = Math.round(Math.random()*20)-10;
-								var yDirt = Math.round(Math.random()*2)-8;
-								var h = Math.round(Math.random()*5)+2
-								var w = Math.round(Math.random()*5)+2
-								ParticlesFloor.push(createParticleFloor({xDir: xDirt, yDir: yDirt, width:w, height: h, fall: true}))
-							}
-						}
-
-						this.canJump = true;
-						this.onBlock = true;
-						break;
-					}
-				}
-				
-				
-			}
-			
-			if(!(this.y < HEIGHT-this.height)){
-				this.y = HEIGHT-this.height;
-				fallingSpeed = 0;
-
-				if(!this.canJump){
-					for(var i = 0; i < 20; i++){
-						var xDirt = Math.round(Math.random()*20)-10;
-						var yDirt = Math.round(Math.random()*2)-8;
-						var h = Math.round(Math.random()*5)+2
-						var w = Math.round(Math.random()*5)+2
-						ParticlesFloor.push(createParticleFloor({xDir: xDirt, yDir: yDirt, width:w, height: h, fall: true}))
-					}
-				}
-
-				this.canJump = true;
-
-				
-			}
-
-		},
-
-		jump: function(){
-			if(this.canJump){
-				this.fallingSpeed = -20;
-				this.canJump = false;
-				this.onBlock = false;
-			}
-
-		}
-	};
 
 	var Blocks = [];
 	var ParticlesBlood = [];
@@ -244,122 +139,179 @@ $(document).ready(function(){
 
 	//SETUP ENGINE
 	var FPS = 35;
-	setInterval(function(){
-		update();
-		draw();
-	}, 1000/FPS);
+	setInterval(function(){update();draw();}, 1000/FPS);
 
 
 
 	//update function - game logic
-	function update(){
+	function update()
+	{
 		//time manipulation
 		currentTime = new Date().getTime();
 
 
 		keyInput();
 
-
-		if(gameState == 0){
-			if(!movingTitle){
+		if(gameState == 0)
+		{
+			if(!movingTitle)
+			{
 				elapsedTimeForIntro += currentTime-previousTime;
-				if(elapsedTimeForIntro > 2000){
-					
+				if(elapsedTimeForIntro > 2000)
+				{
 					movingTitle = true;
 				}
-			}else{
-
+			}
+			else
+			{
 				titleMovingSpeed+=2;
 				titleY-=titleMovingSpeed;
 				if(titleY < -150){titleY = -150; gameState = 1;}
 			}
-
-		}else if(gameState == 1){
-
-			if(movingMenu){
+		}
+		else if(gameState == 1)
+		{
+			if(movingMenu)
+			{
 				menuMovingSpeed += 2;
 				menuOffsetY-= menuMovingSpeed;
 				if(menuOffsetY < 300){menuOffsetY = 300; movingMenu = false;}
-			}else{
-
 			}
-
-
+			else
+			{}
 		}
-		else if(gameState == 2){
+		else if(gameState == 2)
+		{
 			//Elements updates
-			Player.update();
+			Player.update(Blocks,ParticlesFloor);
 			Blocks.forEach(function(block) {block.update();});
 		  	ParticlesBlood.forEach(function(particle) {particle.update();});
 		  	ParticlesFloor.forEach(function(particle) {particle.update();});
-
 
 		  	//row full check
 			var isFull = false;
 
 		  	var bottomBlocks = [];
 		  	bottomBlocks = Blocks.filter(function(block) {return block.gridY == HEIGHT/32-1;});
+		  	var randomRow =  Math.round(Math.random()*(WIDTH/32));
+
 			if(bottomBlocks.length >= WIDTH/32)isFull = true;
-			if(isFull){
-				for(var i = 0; i < Blocks.length; i++){
-					if(Blocks[i].y ==WIDTH/32 -1 ){Blocks.splice(i,1);}
-					else if(Blocks[i].gridY != -1){
-							Blocks[i].y += 32;
-							Blocks[i].gridY++;
+			if(isFull)
+			{
+				var  DEBUG;
+				for(var i = 0; i < Blocks.length; i++)
+				{
+					if(Blocks[i].gridY == HEIGHT/32 -1 )
+					{
+						Blocks.splice(i,1);
+						i--;
+					}
+					else if(Blocks[i].gridX == randomRow)
+					{
+						Blocks.splice(i,1);
+						i--;
+					}
+					else if(Blocks[i].gridY != -1)
+					{
+						Blocks[i].y += 32;
+						Blocks[i].gridY++;
 					}
 				}
 		  		ParticlesBlood.forEach(function(particle) {particle.y+=32;});
 		  		rowsRemoved++;
+		  		
+		  		
+			  	elapsedTimeForBlock = 0;
 			}
 
-			if(ParticlesBlood.length > 1000){
+			if(ParticlesBlood.length > 1000)
+			{
 	  			for(var i = 0; i < ParticlesBlood.length-1000; i++){ParticlesBlood.shift();}
 	  		}
-			if(ParticlesFloor.length > 100){
+			if(ParticlesFloor.length > 100)
+			{
 		  		for(var i = 0; i < ParticlesFloor.length-100; i++){ParticlesFloor.shift();}
 	  		}
 
+	  		elapsedTimeForBlockGroup += currentTime-previousTime;
+	  		if(elapsedTimeForBlockGroup > 15000 && !Player.dead){
+	  			if(!Player.setupGame)
+		  		{
+			  		for(var x = 0; x < WIDTH/32; x++)
+			  		{
+			  			if(x == Math.round(Player.x/32) || x == Math.round(Player.x/32) -1 || x == Math.round(Player.x/32) + 1 ||x == randomRow){}
+			  			else
+			  			{
+			  				var height = Math.round(Math.random()*2);
+			  				for(var y = 0; y < height; y++)
+			  				{
+			  					Blocks.push(createBlock({width:32, height:32}, Player, Blocks, WIDTH, HEIGHT, canvas, ParticlesBlood,ParticlesFloor,x*32, (y*2)*32-64));
+
+			  				}
+			  			}
+			  		}
+			  	}
+	  			elapsedTimeForBlockGroup = 0;
+	  		}
+
 			elapsedTimeForBlock += currentTime-previousTime;
-			if(elapsedTimeForBlock > 1000){Blocks.push(createBlock({width:32, height:32})); elapsedTimeForBlock = 0;}
+			if(elapsedTimeForBlock > 1250 && !Player.dead){fallingBlockX=Math.round(Player.x/32)*32;   Blocks.push(createBlock({width:32, height:32}, Player, Blocks, WIDTH, HEIGHT, canvas, ParticlesBlood,ParticlesFloor,-1,-1)); elapsedTimeForBlock = 0;}
 		}
-
-	  	
-	  	
-
 
 		previousTime = currentTime;
 	}
 
 	//draw function - drawing objects
-	function draw(){
-		canvas.fillStyle = "white";
-		canvas.fillRect(0, 0, WIDTH, HEIGHT);
-		
-
-
-
-		if(gameState == 0){
-
-			menuBackground.draw(canvas,0,titleY);
+	function draw()
+	{
+		//canvas.fillStyle = "white";
+		//canvas.fillRect(0, 0, WIDTH, HEIGHT);
+		if(gameState==2){
+			BackgroundGameSprite.draw(canvas,0,0);
+		}else{
+			BackgroundSprite.draw(canvas,0,0);
 		}
-		else if(gameState == 1){
-			menuBackground.draw(canvas,0,titleY);
+
+		if(gameState == 0)
+		{
+			menuBackground.draw(canvas,WIDTH/2 - 480/2,titleY);
+		}
+		else if(gameState == 1)
+		{
+			menuBackground.draw(canvas,WIDTH/2 - 480/2,titleY);
 			if(selectedMenu == 0)startGameMenuHower.draw(canvas,WIDTH/2 - 80,menuOffsetY);
 			else startGameMenu.draw(canvas,WIDTH/2 - 80,menuOffsetY);
 
 			if(selectedMenu == 1)optionsMenuHower.draw(canvas,WIDTH/2-80, menuOffsetY +50);
 			else optionsMenu.draw(canvas,WIDTH/2-80, menuOffsetY +50);
 		}
-		else if(gameState == 2){
-			//canvas draw setup
-			
-		
+		else if(gameState == 2)
+		{
+			//Blocks.filter(function(block) {return block.gridY == HEIGHT/32-1;});
 			//drawing elements
-			Player.draw();
+			
+			if(fallingBlockX!= -1)
+			{
+				for(var y = 0; y < HEIGHT/32; y++)
+				{
+					fallingBlockTrailSprite.draw(canvas, fallingBlockX, y*32);
+		  			
+					
+		  		}
+		  	}
 
-			Blocks.forEach(function(bullet) {bullet.draw();});
+			Blocks.forEach(function(block)
+			{
+				block.draw();
+				
+			});
+
 	  		ParticlesBlood.forEach(function(particle) {particle.draw();});
+	  		Player.draw();
 	  		ParticlesFloor.forEach(function(particle) {particle.draw();});
+
+
+	  		
 
 	  		//time between frames count;
 	  		canvas.font="30px Arial";
@@ -370,7 +322,13 @@ $(document).ready(function(){
 
 
 			oldTime = previousTime;
-		} 	
+
+			if(Player.dead)
+			{
+				gameOverSprite.draw(canvas,WIDTH/2-gameOverSprite.width/2,HEIGHT/2-gameOverSprite.height/2);
+			} 	
+		}
+
 		canvas.strokeStyle = "black";
 		canvas.strokeRect(0, 0, WIDTH, HEIGHT);
 	}
@@ -378,395 +336,94 @@ $(document).ready(function(){
 	function keyInput(){
 		/*LEFT RIHT MOVEMENT*/
 
-		if(gameState == 1){
-			if(Keys.down && !pressedButton){
+		if(gameState == 1)
+		{
+			if(Keys.down && !pressedButton)
+			{
 				selectedMenu = (selectedMenu+1)%2;
 				pressedButton = true;
-				
 			}
-			if(Keys.up && !pressedButton){
+			if(Keys.up && !pressedButton)
+			{
 				selectedMenu--;
 				if(selectedMenu < 0){selectedMenu = 1;}
 				pressedButton = true;
-				
-				
-			}if(!Keys.down && !Keys.up){
+			}
+			if(!Keys.down && !Keys.up)
+			{
 				pressedButton = false;
 			}
-
-
-
-			if(Keys.enter && selectedMenu == 0){
+			if(Keys.enter && selectedMenu == 0)
+			{
 				setupGame();
 				gameState++;
-				
 			}
 		}
-		if(gameState == 2){
-			if(Keys.left){
+		if(gameState == 2 && !Player.dead)
+		{
+			if(Keys.left)
+			{
 				Player.xDirection -= 1.5;
 				if(Player.xDirection < -10){Player.xDirection = -10;}
 			}
-			if(Keys.right){
+			if(Keys.right
+				){
 				Player.xDirection += 1.5;
 				if(Player.xDirection > 10){Player.xDirection = 10;}
 			}
-			if(!Keys.left && !Keys.right){
+			if(!Keys.left && !Keys.right)
+			{
 				if(Player.xDirection == 0){}
-				else if(Player.xDirection < 0){
+				else if(Player.xDirection < 0)
+				{
 					Player.xDirection += 4;
 					if(Player.xDirection >= 0){Player.xDirection = 0;} 
-				}else if(Player.xDirection > 0){
+				}
+				else if(Player.xDirection > 0)
+				{
 					Player.xDirection -= 4;
 					if(Player.xDirection <= 0){Player.xDirection = 0;}
 				}
 			}
 			/**/
-			if(Keys.jump){
+			if(Keys.jump)
+			{
 				Player.jump();
 			}
 		}
+		if(Player.dead)
+		{
+			if(Player.xDirection == 0){}
+			else if(Player.xDirection < 0)
+			{
+				Player.xDirection += 4;
+				if(Player.xDirection >= 0){Player.xDirection = 0;} 
+			}
+			else if(Player.xDirection > 0)
+			{
+				Player.xDirection -= 4;
+				if(Player.xDirection <= 0){Player.xDirection = 0;}
+			}
+		}
 	}
 
-	function collides(a, b) {
-	  return a.x < b.x + b.width &&
-	         a.x + a.width > b.x &&
-	         a.y < b.y + b.height &&
-	         a.y + a.height > b.y;
-	}
-
-	function setupGame(){
+	function setupGame()
+	{
 		Player.x = WIDTH/2-16;
-		Player.y = 0;
+		Player.y = -64;
 
 		rowsRemoved = 0;
 
-		for(var x = 0; x < WIDTH/32; x++){
-			var height = Math.round(Math.random()*7)+1;
-			for(var y = height; y >= 0; y--){
-				Blocks.push(createCustomBlock(x*32, (y+2)*32, {width:32, height:32}));
+		for(var x = 0; x < WIDTH/32; x++)
+		{
+			var height = Math.round(Math.random()*2)+2;
+			for(var y = height; y >= 0; y--)
+			{
+				Blocks.push(createBlock({width:32, height:32}, Player, Blocks, WIDTH, HEIGHT, canvas, ParticlesBlood,ParticlesFloor,x*32, (y+2)*32));
+				//reateBlock({width:32, height:32}, Player, Blocks, WIDTH, HEIGHT, canvas, ParticlesBlood,-1,-1)
 				//Blocks.push(createBlock({width:32, height:32}));
 			}
 		}
-	}
-
-	//Game objects creation
-	function createBlock(Block){
-
-		//Block.width = 32;
-		//Block.height = 32;
-
-		Block.colorNumber = Math.round(Math.random()*3);
-		switch(Block.colorNumber){
-			case 0:
-				Block.color = "blue";
-				break;
-			case 1:
-				Block.color = "darkgray";
-				break;
-			case 2:
-				Block.color = "green";
-				break;
-
-			case 3:
-				Block.color = "orange";
-				break;
-		}
-
-		Block.falling = true;
-
-		//Block.x = Math.round(Math.random()*(WIDTH/Block.width -1))*Block.width;
-		Block.x = Math.round(Player.x/32)*32;
-		Block.y = -32;
-
-		Block.fallingSpeed = 0;
-
-		Block.gridY = -1;
-		Block.gridX = Block.x/32
-
-
-		Block.update = function(){
-			if(Block.falling){
-				Block.fallingSpeed += 3;
-				if(Block.fallingSpeed > 30){Block.fallingSpeed = 30;}
-				Block.y += Block.fallingSpeed;
-
-				for(var i = 0; i < Blocks.length; i++){
-					if(Block != Blocks[i] && collides(this,Blocks[i]) && !Blocks[i].falling){
-						Block.y = Blocks[i].y-Block.height;
-						Block.falling = false;
-						//placedBlocks[Block.y/32][Block.x/32] = Block;
-						Block.gridY = Block.y / 32;
-						break;
-					}
-				}
-
-
-				if(Block.y > HEIGHT-Block.width) {
-					Block.y = HEIGHT-Block.width;
-					Block.fallingSpeed = 0;
-					Block.falling = false;
-					//placedBlocks[Block.y/32][Block.x/32] = Block;
-					Block.gridY = Block.y / 32;
-
-				}
-				/*var topPlayerCollision = {x:Player.x, y:Player.y-16, height: 16, width: Player.width}
-				if(collides(topPlayerCollision,Block)){
-					Player.fallingSpeed = Block.fallingSpeed
-				}*/
-				var leftPlayerBlock = {x: Player.x, y: Player.y, width: Player.width/4, height: Player.height};
-				var rightPlayerBlock = {x: Player.x+Player.width*3/4, y: Player.y, width: Player.width/4, height: Player.height};
-				var centerPlayerBlock = {x: Player.x+Player.width/2-Player.width/4, y: Player.y, width: Player.width/2, height: Player.height};
-
-				if(collides(centerPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 100; i++){
-						var xDirt = Math.round(Math.random()*50)-25;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*5)+2
-						var w = Math.round(Math.random()*5)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-				}
-				else if(collides(leftPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 50; i++){
-						var xDirt = Math.round(Math.random()*25)+1;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*4)+2
-						var w = Math.round(Math.random()*4)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-					Player.x = Block.x+Block.width;
-				}
-				else if(collides(rightPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 50; i++){
-						var xDirt = Math.round(Math.random()*25)-26;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*4)+2
-						var w = Math.round(Math.random()*4)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-					Player.x = Block.x-Player.width;
-				}
-				
-			}
-		};
-
-		Block.draw = function(){
-			canvas.fillStyle = Block.color;
-			canvas.fillRect(Block.x, Block.y, Block.width, Block.height);
-			//canvas.strokeStyle = "red";
-			//canvas.strokeRect(Block.x, Block.y, Block.width, Block.height);
-		};
-
-		return Block;
-	}
-
-	//createBLOCK custom
-	function createCustomBlock(x, y, Block){
-
-		//Block.width = 32;
-		//Block.height = 32;
-
-		Block.colorNumber = Math.round(Math.random()*3);
-		switch(Block.colorNumber){
-			case 0:
-				Block.color = "blue";
-				break;
-			case 1:
-				Block.color = "darkgray";
-				break;
-			case 2:
-				Block.color = "green";
-				break;
-
-			case 3:
-				Block.color = "orange";
-				break;
-		}
-
-		Block.falling = true;
-
-		//Block.x = Math.round(Math.random()*(WIDTH/Block.width -1))*Block.width;
-		Block.x = x;
-		Block.y = y;
-
-		Block.fallingSpeed = 0;
-
-		Block.gridY = -1;
-		Block.gridX = Block.x/32
-
-
-		Block.update = function(){
-			if(Block.falling){
-				Block.fallingSpeed += 3;
-				if(Block.fallingSpeed > 30){Block.fallingSpeed = 30;}
-				Block.y += Block.fallingSpeed;
-
-				for(var i = 0; i < Blocks.length; i++){
-					if(Block != Blocks[i] && collides(this,Blocks[i]) && !Blocks[i].falling){
-						Block.y = Blocks[i].y-Block.height;
-						Block.falling = false;
-						//placedBlocks[Block.y/32][Block.x/32] = Block;
-						Block.gridY = Block.y / 32;
-						break;
-					}
-				}
-
-
-				if(Block.y > HEIGHT-Block.width) {
-					Block.y = HEIGHT-Block.width;
-					Block.fallingSpeed = 0;
-					Block.falling = false;
-					//placedBlocks[Block.y/32][Block.x/32] = Block;
-					Block.gridY = Block.y / 32;
-
-				}
-				/*var topPlayerCollision = {x:Player.x, y:Player.y-16, height: 16, width: Player.width}
-				if(collides(topPlayerCollision,Block)){
-					Player.fallingSpeed = Block.fallingSpeed
-				}*/
-				var leftPlayerBlock = {x: Player.x, y: Player.y, width: Player.width/4, height: Player.height};
-				var rightPlayerBlock = {x: Player.x+Player.width*3/4, y: Player.y, width: Player.width/4, height: Player.height};
-				var centerPlayerBlock = {x: Player.x+Player.width/2-Player.width/4, y: Player.y, width: Player.width/2, height: Player.height};
-
-				if(collides(centerPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 100; i++){
-						var xDirt = Math.round(Math.random()*50)-25;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*5)+2
-						var w = Math.round(Math.random()*5)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-				}
-				else if(collides(leftPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 50; i++){
-						var xDirt = Math.round(Math.random()*25)+1;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*4)+2
-						var w = Math.round(Math.random()*4)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-					Player.x = Block.x+Block.width;
-				}
-				else if(collides(rightPlayerBlock,Block)){
-					fatalBlock = Blocks.indexOf(Block);
-					for(var i = 0; i < 50; i++){
-						var xDirt = Math.round(Math.random()*25)-26;
-						var yDirt = Math.round(Math.random()*5)-10;
-						var h = Math.round(Math.random()*4)+2
-						var w = Math.round(Math.random()*4)+2
-						ParticlesBlood.push(createParticleBlood({xDir: xDirt, yDir: yDirt, width:w, height: h}))
-					}
-					Player.x = Block.x-Player.width;
-				}
-				
-			}
-		};
-
-		Block.draw = function(){
-			canvas.fillStyle = Block.color;
-			canvas.fillRect(Block.x, Block.y, Block.width, Block.height);
-			//canvas.strokeStyle = "red";
-			//canvas.strokeRect(Block.x, Block.y, Block.width, Block.height);
-		};
-
-		return Block;
-	}
-
-	//BLOOD PARTICLES
-	function createParticleBlood(Particle){
-		//xDir,yDir,height,width come from object creation
-
-		Particle.x = Player.x + Player.width/2;
-		Particle.y = Player.y + Player.height/2,
-
-		Particle.fallingSpeed = 0;
-
-		Particle.isMoving = true,
-		Particle.draw = true;
-
-		Particle.update =  function(){
-			if(Particle.isMoving){
-				Particle.fallingSpeed += 1;
-				
-				Particle.x+= Particle.xDir;
-				Particle.y+= Particle.yDir + Particle.fallingSpeed;
-			
-
-				for(var i = 0; i < Blocks.length; i++){
-					if(i != fatalBlock && collides(Particle,Blocks[i])){
-						Particle.isMoving = false;
-						
-					}
-				}
-				if(Particle.x < 0){Particle.x = 0; Particle.isMoving = false;}
-				if(Particle.x > WIDTH-Particle.width){Particle.x = WIDTH-Particle.width; Particle.isMoving = false;}
-				if(Particle.y > HEIGHT-Particle.height){Particle.y = HEIGHT-Particle.height; Particle.isMoving = false;}
-			}
-		};
-
-		Particle.draw = function(){
-			if(Particle.draw){
-				canvas.fillStyle = "red";
-				canvas.fillRect(Particle.x,Particle.y,Particle.width,Particle.height);
-			}
-		}
-
-		return Particle;
-	}
-
-	function createParticleFloor(Particle){
-		//xDir,yDir,height,width come from object creation
-
-		if(!Particle.fall){
-
-			if(Player.xDirection < 0){
-				Particle.x = Player.x + Player.width-4;
-			}else {
-				Particle.x = Player.x + 4;
-			}
-		}else{
-			Particle.x = Player.x + Player.width/2;
-		}
-		Particle.y = Player.y + Player.height,
-
-		Particle.fallingSpeed = 0;
-
-		Particle.isMoving = true,
-		Particle.draw = true;
-
-		Particle.update =  function(){
-			if(Particle.isMoving){
-				Particle.fallingSpeed += 1;
-				
-				Particle.x+= Particle.xDir;
-				Particle.y+= Particle.yDir + Particle.fallingSpeed;
-			
-				/*
-				for(var i = 0; i < Blocks.length; i++){
-					if(i != fatalBlock && collides(Particle,Blocks[i])){
-						Particle.isMoving = false;
-						
-					}
-				}
-				*/
-
-				if(Particle.y > HEIGHT-Particle.height){Particle.y = HEIGHT-Particle.height; Particle.isMoving = false;}
-			}
-		};
-
-		Particle.draw = function(){
-			if(Particle.draw){
-				canvas.fillStyle = "black";
-				canvas.fillRect(Particle.x,Particle.y,Particle.width,Particle.height);
-			}
-		}
-		return Particle;
 	}
 
 })
